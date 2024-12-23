@@ -1,7 +1,8 @@
 import numpy as np
 import random
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
+import pickle
 
 class Puzzle:
     def __init__(self, initial_state):
@@ -43,6 +44,14 @@ class Puzzle:
         )
         return inversions % 2 == 0
 
+    def save_game(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump((self.state, self.move_count), f)
+
+    def load_game(self, filename):
+        with open(filename, 'rb') as f:
+            self.state, self.move_count = pickle.load(f)
+
 class PuzzleGUI:
     def __init__(self, master):
         self.master = master
@@ -64,7 +73,13 @@ class PuzzleGUI:
             self.buttons.append(row)
 
         self.reset_button = tk.Button(self.master, text='Reset', command=self.reset_game)
-        self.reset_button.grid(row=3, column=0, columnspan=3)
+        self.reset_button.grid(row=3, column=0)
+
+        self.save_button = tk.Button(self.master, text='Save', command=self.save_game)
+        self.save_button.grid(row=3, column=1)
+
+        self.load_button = tk.Button(self.master, text='Load', command=self.load_game)
+        self.load_button.grid(row=3, column=2)
 
     def move_tile(self, i, j):
         zero_pos = np.argwhere(self.puzzle.state == 0)[0]
@@ -93,6 +108,20 @@ class PuzzleGUI:
         self.puzzle.randomize()
         self.puzzle.move_count = 0
         self.update_display()
+
+    def save_game(self):
+        filename = filedialog.asksaveasfilename(defaultextension=".pkl",
+                                                  filetypes=[("Pickle files", "*.pkl"), ("All files", "*.*")])
+        if filename:
+            self.puzzle.save_game(filename)
+            messagebox.showinfo("Game Saved", "Your game has been saved successfully!")
+
+    def load_game(self):
+        filename = filedialog.askopenfilename(filetypes=[("Pickle files", "*.pkl"), ("All files", "*.*")])
+        if filename:
+            self.puzzle.load_game(filename)
+            self.update_display()
+            messagebox.showinfo("Game Loaded", "Your game has been loaded successfully!")
 
 if __name__ == "__main__":
     root = tk.Tk()
