@@ -81,6 +81,9 @@ class PuzzleGUI:
         self.load_button = tk.Button(self.master, text='Load', command=self.load_game)
         self.load_button.grid(row=3, column=2)
 
+        self.score_label = tk.Label(self.master, text='Score: 0')
+        self.score_label.grid(row=4, column=0, columnspan=3)
+
     def move_tile(self, i, j):
         zero_pos = np.argwhere(self.puzzle.state == 0)[0]
         x, y = zero_pos
@@ -97,7 +100,13 @@ class PuzzleGUI:
 
             self.update_display()
             if self.puzzle.is_solved():
-                messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves!")
+                score = self.calculate_score()
+                messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves!\nYour score: {score}")
+                self.score_label.config(text=f'Score: {score}')
+
+    def calculate_score(self):
+        # Simple scoring: 1000 - (10 * moves)
+        return max(0, 1000 - (10 * self.puzzle.move_count))
 
     def update_display(self):
         for i in range(3):
@@ -108,6 +117,7 @@ class PuzzleGUI:
         self.puzzle.randomize()
         self.puzzle.move_count = 0
         self.update_display()
+        self.score_label.config(text='Score: 0')
 
     def save_game(self):
         filename = filedialog.asksaveasfilename(defaultextension=".pkl",
@@ -121,6 +131,7 @@ class PuzzleGUI:
         if filename:
             self.puzzle.load_game(filename)
             self.update_display()
+            self.score_label.config(text=f'Score: {self.calculate_score()}')
             messagebox.showinfo("Game Loaded", "Your game has been loaded successfully!")
 
 if __name__ == "__main__":
