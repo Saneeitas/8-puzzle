@@ -71,18 +71,21 @@ class PuzzleGUI:
         self.master = master
         self.master.title("8-Puzzle Game")
         self.center_window()
+        
+        # Start the timer immediately when the game starts
+        self.start_time = time.time()
+        self.elapsed_time = 0
 
         self.puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])
-        self.start_time = None
-        self.elapsed_time = 0
         self.high_scores = self.puzzle.load_high_scores()
         self.puzzle.randomize()
         self.create_widgets()
         self.update_display()
+        self.start_timer()  # Start the timer updates immediately
 
     def center_window(self):
         self.master.update_idletasks()  # Update "requested size" from geometry manager
-        width = 400
+        width = 250
         height = 400
         x = (self.master.winfo_screenwidth() // 2) - (width // 2)
         y = (self.master.winfo_screenheight() // 2) - (height // 2)
@@ -181,9 +184,21 @@ class PuzzleGUI:
     def reset_game(self):
         self.puzzle.randomize()
         self.puzzle.move_count = 0
-        self.start_time = time.time()
+        self.start_time = time.time()  # Start the timer immediately
         self.update_display()
         self.score_label.config(text='Score: 0')
+        self.start_timer()  # Start the timer updates immediately
+
+    def start_timer(self):
+        self.elapsed_time = 0
+        self.timer_label.config(text='Time: 0s')
+        self.update_timer()  # Start updating the timer immediately
+
+    def update_timer(self):
+        if self.start_time is not None:
+            self.elapsed_time = int(time.time() - self.start_time)
+            self.timer_label.config(text=f'Time: {self.elapsed_time}s')
+        self.master.after(1000, self.update_timer)  # Update every second
 
     def save_game(self):
         filename = filedialog.asksaveasfilename(defaultextension=".pkl",
@@ -197,7 +212,8 @@ class PuzzleGUI:
         if filename:
             self.puzzle.load_game(filename)
             self.update_display()
-            self.start_time = time.time()
+            self.start_time = time.time()  # Reset the timer
+            self.start_timer()  # Start the timer updates immediately
             messagebox.showinfo("Game Loaded", "Your game has been loaded successfully!")
 
     def update_high_scores(self, score):
