@@ -3,6 +3,7 @@ import random
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import pickle
+import time
 
 class Puzzle:
     def __init__(self, initial_state):
@@ -57,6 +58,8 @@ class PuzzleGUI:
         self.master = master
         self.master.title("8-Puzzle Game")
         self.puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])
+        self.start_time = None
+        self.elapsed_time = 0
         self.puzzle.randomize()
         self.create_widgets()
         self.update_display()
@@ -84,6 +87,9 @@ class PuzzleGUI:
         self.score_label = tk.Label(self.master, text='Score: 0')
         self.score_label.grid(row=4, column=0, columnspan=3)
 
+        self.timer_label = tk.Label(self.master, text='Time: 0s')
+        self.timer_label.grid(row=5, column=0, columnspan=3)
+
     def move_tile(self, i, j):
         zero_pos = np.argwhere(self.puzzle.state == 0)[0]
         x, y = zero_pos
@@ -100,22 +106,30 @@ class PuzzleGUI:
 
             self.update_display()
             if self.puzzle.is_solved():
-                score = self.calculate_score()
-                messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves!\nYour score: {score}")
+                elapsed_time = int(time.time() - self.start_time)
+                score = self.calculate_score(elapsed_time)
+                messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves and {elapsed_time} seconds!\nYour score: {score}")
                 self.score_label.config(text=f'Score: {score}')
+                self.reset_timer()
 
-    def calculate_score(self):
-        # Simple scoring: 1000 - (10 * moves)
-        return max(0, 1000 - (10 * self.puzzle.move_count))
+    def calculate_score(self, elapsed_time):
+        # Simple scoring: 1000 - (10 * moves) - (2 * elapsed time)
+        return max(0, 1000 - (10 * self.puzzle.move_count) - (2 * elapsed_time))
 
     def update_display(self):
         for i in range(3):
             for j in range(3):
                 self.buttons[i][j].config(text=str(self.puzzle.state[i][j]) if self.puzzle.state[i][j] != 0 else '')
+        
+        # Update timer display
+        if self.start_time is not None:
+            self.elapsed_time = int(time.time() - self.start_time)
+            self.timer_label.config(text=f'Time: {self.elapsed_time}s')
 
     def reset_game(self):
         self.puzzle.randomize()
         self.puzzle.move_count = 0
+        self.start_time = time.time()  # Start the timer
         self.update_display()
         self.score_label.config(text='Score: 0')
 
@@ -131,8 +145,13 @@ class PuzzleGUI:
         if filename:
             self.puzzle.load_game(filename)
             self.update_display()
-            self.score_label.config(text=f'Score: {self.calculate_score()}')
+            self.start_time = time.time()  # Reset the timer
             messagebox.showinfo("Game Loaded", "Your game has been loaded successfully!")
+
+    def reset_timer(self):
+        self.start_time = None
+        self.elapsed_time = 0
+        self.timer_label.config(text='Time: 0s')
 
 if __name__ == "__main__":
     root = tk.Tk()
