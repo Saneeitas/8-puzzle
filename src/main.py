@@ -7,8 +7,9 @@ import time
 import os
 
 class Puzzle:
-    def __init__(self, initial_state):
-        self.state = np.array(initial_state).reshape(3, 3)
+    def __init__(self, initial_state, grid_size=3):
+        self.grid_size = grid_size
+        self.state = np.array(initial_state).reshape(grid_size, grid_size)
         self.move_count = 0  # Initialize move counter
 
     def display(self):
@@ -18,11 +19,11 @@ class Puzzle:
         zero_pos = np.argwhere(self.state == 0)[0]
         x, y = zero_pos
 
-        if direction == 'up' and x < 2:
+        if direction == 'up' and x < self.grid_size - 1:
             self.state[x, y], self.state[x + 1, y] = self.state[x + 1, y], self.state[x, y]
         elif direction == 'down' and x > 0:
             self.state[x, y], self.state[x - 1, y] = self.state[x - 1, y], self.state[x, y]
-        elif direction == 'left' and y < 2:
+        elif direction == 'left' and y < self.grid_size - 1:
             self.state[x, y], self.state[x, y + 1] = self.state[x, y + 1], self.state[x, y]
         elif direction == 'right' and y > 0:
             self.state[x, y], self.state[x, y - 1] = self.state[x, y - 1], self.state[x, y]
@@ -30,13 +31,13 @@ class Puzzle:
         self.move_count += 1  # Increment move counter
 
     def is_solved(self):
-        return np.array_equal(self.state, np.array([1, 2, 3, 4, 5, 6, 7, 8, 0]).reshape(3, 3))
+        return np.array_equal(self.state, np.arange(1, self.grid_size**2).tolist() + [0])
 
     def randomize(self):
         while True:
-            state = np.random.permutation(9)  # Randomly permute numbers 0-8
+            state = np.random.permutation(self.grid_size**2)  # Randomly permute numbers 0 to grid_size^2-1
             if self.is_solvable(state):
-                self.state = state.reshape(3, 3)
+                self.state = state.reshape(self.grid_size, self.grid_size)
                 break
 
     def is_solvable(self, state):
@@ -68,6 +69,8 @@ class PuzzleGUI:
     def __init__(self, master):
         self.master = master
         self.master.title("8-Puzzle Game")
+        self.center_window()
+        
         self.puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])
         self.start_time = None
         self.elapsed_time = 0
@@ -76,34 +79,43 @@ class PuzzleGUI:
         self.create_widgets()
         self.update_display()
 
+    def center_window(self):
+        self.master.update_idletasks()  # Update "requested size" from geometry manager
+        width = 400
+        height = 400
+        x = (self.master.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.master.winfo_screenheight() // 2) - (height // 2)
+        self.master.geometry(f'{width}x{height}+{x}+{y}')
+
     def create_widgets(self):
         self.buttons = []
         for i in range(3):
             row = []
             for j in range(3):
                 btn = tk.Button(self.master, text='', width=5, height=2,
-                                command=lambda i=i, j=j: self.move_tile(i, j))
-                btn.grid(row=i, column=j)
+                                command=lambda i=i, j=j: self.move_tile(i, j),
+                                bg='#4CAF50', fg='white', font=('Helvetica', 16))
+                btn.grid(row=i, column=j, padx=5, pady=5)
                 row.append(btn)
             self.buttons.append(row)
 
-        self.reset_button = tk.Button(self.master, text='Reset', command=self.reset_game)
-        self.reset_button.grid(row=3, column=0)
+        self.reset_button = tk.Button(self.master, text='Reset', command=self.reset_game, bg='#FF5722', fg='white')
+        self.reset_button.grid(row=3, column=0, columnspan=3, pady=10)
 
-        self.save_button = tk.Button(self.master, text='Save', command=self.save_game)
-        self.save_button.grid(row=3, column=1)
+        self.save_button = tk.Button(self.master, text='Save', command=self.save_game, bg='#2196F3', fg='white')
+        self.save_button.grid(row=4, column=0, columnspan=1)
 
-        self.load_button = tk.Button(self.master, text='Load', command=self.load_game)
-        self.load_button.grid(row=3, column=2)
+        self.load_button = tk.Button(self.master, text='Load', command=self.load_game, bg='#2196F3', fg='white')
+        self.load_button.grid(row=4, column=1, columnspan=1)
 
-        self.score_label = tk.Label(self.master, text='Score: 0')
-        self.score_label.grid(row=4, column=0, columnspan=3)
+        self.high_scores_button = tk.Button(self.master, text='High Scores', command=self.show_high_scores, bg='#FFC107', fg='black')
+        self.high_scores_button.grid(row=4, column=2, columnspan=1)
 
-        self.timer_label = tk.Label(self.master, text='Time: 0s')
-        self.timer_label.grid(row=5, column=0, columnspan=3)
+        self.score_label = tk.Label(self.master, text='Score: 0', font=('Helvetica', 14))
+        self.score_label.grid(row=5, column=0, columnspan=3)
 
-        self.high_scores_button = tk.Button(self.master, text='High Scores', command=self.show_high_scores)
-        self.high_scores_button.grid(row=6, column=0, columnspan=3)
+        self.timer_label = tk.Label(self.master, text='Time: 0s', font=('Helvetica', 14))
+        self.timer_label.grid(row=6, column=0, columnspan=3)
 
     def move_tile(self, i, j):
         zero_pos = np.argwhere(self.puzzle.state == 0)[0]
@@ -120,6 +132,8 @@ class PuzzleGUI:
                 self.puzzle.move('right')
 
             self.update_display()
+            self.animate_move(i, j)
+            
             if self.puzzle.is_solved():
                 elapsed_time = int(time.time() - self.start_time)
                 score = self.calculate_score(elapsed_time)
@@ -129,7 +143,6 @@ class PuzzleGUI:
                 self.reset_timer()
 
     def calculate_score(self, elapsed_time):
-        # Simple scoring: 1000 - (10 * moves) - (2 * elapsed time)
         return max(0, 1000 - (10 * self.puzzle.move_count) - (2 * elapsed_time))
 
     def update_display(self):
@@ -137,15 +150,19 @@ class PuzzleGUI:
             for j in range(3):
                 self.buttons[i][j].config(text=str(self.puzzle.state[i][j]) if self.puzzle.state[i][j] != 0 else '')
         
-        # Update timer display
         if self.start_time is not None:
             self.elapsed_time = int(time.time() - self.start_time)
             self.timer_label.config(text=f'Time: {self.elapsed_time}s')
 
+    def animate_move(self, i, j):
+        # This function can be enhanced with actual animation logic if desired
+        self.buttons[i][j].config(bg='#FFC107')  # Change color on move
+        self.master.after(100, lambda: self.buttons[i][j].config(bg='#4CAF50'))  # Reset color after 100ms
+
     def reset_game(self):
         self.puzzle.randomize()
         self.puzzle.move_count = 0
-        self.start_time = time.time()  # Start the timer
+        self.start_time = time.time()
         self.update_display()
         self.score_label.config(text='Score: 0')
 
@@ -161,7 +178,7 @@ class PuzzleGUI:
         if filename:
             self.puzzle.load_game(filename)
             self.update_display()
-            self.start_time = time.time()  # Reset the timer
+            self.start_time = time.time()
             messagebox.showinfo("Game Loaded", "Your game has been loaded successfully!")
 
     def update_high_scores(self, score):
