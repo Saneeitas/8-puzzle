@@ -5,6 +5,7 @@ from tkinter import messagebox, filedialog
 import pickle
 import time
 import os
+import winsound  # For sound effects (Windows only)
 
 class Puzzle:
     def __init__(self, initial_state, grid_size=3):
@@ -70,7 +71,7 @@ class PuzzleGUI:
         self.master = master
         self.master.title("8-Puzzle Game")
         self.center_window()
-        
+
         self.puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])
         self.start_time = None
         self.elapsed_time = 0
@@ -133,10 +134,11 @@ class PuzzleGUI:
 
             self.update_display()
             self.animate_move(i, j)
-            
+
             if self.puzzle.is_solved():
                 elapsed_time = int(time.time() - self.start_time)
                 score = self.calculate_score(elapsed_time)
+                self.play_sound("win.wav")  # Play win sound
                 messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves and {elapsed_time} seconds!\nYour score: {score}")
                 self.update_high_scores(score)
                 self.score_label.config(text=f'Score: {score}')
@@ -155,9 +157,26 @@ class PuzzleGUI:
             self.timer_label.config(text=f'Time: {self.elapsed_time}s')
 
     def animate_move(self, i, j):
-        # This function can be enhanced with actual animation logic if desired
-        self.buttons[i][j].config(bg='#FFC107')  # Change color on move
-        self.master.after(100, lambda: self.buttons[i][j].config(bg='#4CAF50'))  # Reset color after 100ms
+        # Animate the tile movement
+        x, y = np.argwhere(self.puzzle.state == 0)[0]  # Get the zero position
+        tile = self.buttons[i][j]  # The moving tile
+        zero_tile = self.buttons[x][y]  # The empty tile
+
+        # Move the tile to the empty space with animation
+        original_position = tile.grid_info()
+        tile.grid(row=x, column=y)
+        zero_tile.grid(row=i, column=j)
+
+        # Play move sound
+        self.play_sound("move.wav")
+
+        # Optionally reset the color after movement
+        self.master.after(100, lambda: tile.config(bg='#4CAF50'))
+
+    def play_sound(self, sound_file):
+        # Play a sound if the file exists
+        if os.path.exists(sound_file):
+            winsound.PlaySound(sound_file, winsound.SND_ASYNC)
 
     def reset_game(self):
         self.puzzle.randomize()
