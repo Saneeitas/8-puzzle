@@ -48,19 +48,36 @@ class Puzzle:
         self.move_count = 0  # Reset move counter
         self.randomize()  # Randomize the puzzle state
 
+    def help(self):
+        print("Welcome to the 8-Puzzle Game!")
+        print("Instructions:")
+        print("1. You can move the empty space (0) using the following commands:")
+        print("   - 'up' to move the empty space up")
+        print("   - 'down' to move the empty space down")
+        print("   - 'left' to move the empty space left")
+        print("   - 'right' to move the empty space right")
+        print("2. Type 'reset' to restart the game with a new random state.")
+        print("3. Type 'quit' to exit the game.")
+        print("4. Type 'help' to see this message again.")
+
 if __name__ == "__main__":
     puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])  # Initial state
     puzzle.randomize()  # Randomize the puzzle state
     puzzle.display()
 
+    puzzle.help()  # Display help instructions
+
     while True:
-        move = input("Enter your move (up, down, left, right), 'reset' to restart, or 'quit' to exit: ").strip().lower()
+        move = input("Enter your move (up, down, left, right), 'reset' to restart, 'help' for instructions, or 'quit' to exit: ").strip().lower()
         if move == 'quit':
             print("Thanks for playing!")
             break
         elif move == 'reset':
             puzzle.reset()  # Reset the game
             puzzle.display()
+            continue
+        elif move == 'help':
+            puzzle.help()  # Display help instructions
             continue
         elif move in ['up', 'down', 'left', 'right']:
             puzzle.move(move)
