@@ -1,5 +1,7 @@
 import numpy as np
 import random
+import tkinter as tk
+from tkinter import messagebox
 
 class Puzzle:
     def __init__(self, initial_state):
@@ -7,7 +9,7 @@ class Puzzle:
         self.move_count = 0  # Initialize move counter
 
     def display(self):
-        print(self.state)
+        return self.state
 
     def move(self, direction):
         zero_pos = np.argwhere(self.state == 0)[0]
@@ -21,10 +23,7 @@ class Puzzle:
             self.state[x, y], self.state[x, y + 1] = self.state[x, y + 1], self.state[x, y]
         elif direction == 'right' and y > 0:
             self.state[x, y], self.state[x, y - 1] = self.state[x, y - 1], self.state[x, y]
-        else:
-            print("Invalid move!")
-            return
-        
+
         self.move_count += 1  # Increment move counter
 
     def is_solved(self):
@@ -44,46 +43,58 @@ class Puzzle:
         )
         return inversions % 2 == 0
 
-    def reset(self):
-        self.move_count = 0  # Reset move counter
-        self.randomize()  # Randomize the puzzle state
+class PuzzleGUI:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("8-Puzzle Game")
+        self.puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])
+        self.puzzle.randomize()
+        self.create_widgets()
+        self.update_display()
 
-    def help(self):
-        print("Welcome to the 8-Puzzle Game!")
-        print("Instructions:")
-        print("1. You can move the empty space (0) using the following commands:")
-        print("   - 'up' to move the empty space up")
-        print("   - 'down' to move the empty space down")
-        print("   - 'left' to move the empty space left")
-        print("   - 'right' to move the empty space right")
-        print("2. Type 'reset' to restart the game with a new random state.")
-        print("3. Type 'quit' to exit the game.")
-        print("4. Type 'help' to see this message again.")
+    def create_widgets(self):
+        self.buttons = []
+        for i in range(3):
+            row = []
+            for j in range(3):
+                btn = tk.Button(self.master, text='', width=5, height=2,
+                                command=lambda i=i, j=j: self.move_tile(i, j))
+                btn.grid(row=i, column=j)
+                row.append(btn)
+            self.buttons.append(row)
+
+        self.reset_button = tk.Button(self.master, text='Reset', command=self.reset_game)
+        self.reset_button.grid(row=3, column=0, columnspan=3)
+
+    def move_tile(self, i, j):
+        zero_pos = np.argwhere(self.puzzle.state == 0)[0]
+        x, y = zero_pos
+
+        if (i == x and abs(j - y) == 1) or (j == y and abs(i - x) == 1):
+            if i == x + 1:
+                self.puzzle.move('up')
+            elif i == x - 1:
+                self.puzzle.move('down')
+            elif j == y + 1:
+                self.puzzle.move('left')
+            elif j == y - 1:
+                self.puzzle.move('right')
+
+            self.update_display()
+            if self.puzzle.is_solved():
+                messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves!")
+
+    def update_display(self):
+        for i in range(3):
+            for j in range(3):
+                self.buttons[i][j].config(text=str(self.puzzle.state[i][j]) if self.puzzle.state[i][j] != 0 else '')
+
+    def reset_game(self):
+        self.puzzle.randomize()
+        self.puzzle.move_count = 0
+        self.update_display()
 
 if __name__ == "__main__":
-    puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])  # Initial state
-    puzzle.randomize()  # Randomize the puzzle state
-    puzzle.display()
-
-    puzzle.help()  # Display help instructions
-
-    while True:
-        move = input("Enter your move (up, down, left, right), 'reset' to restart, 'help' for instructions, or 'quit' to exit: ").strip().lower()
-        if move == 'quit':
-            print("Thanks for playing!")
-            break
-        elif move == 'reset':
-            puzzle.reset()  # Reset the game
-            puzzle.display()
-            continue
-        elif move == 'help':
-            puzzle.help()  # Display help instructions
-            continue
-        elif move in ['up', 'down', 'left', 'right']:
-            puzzle.move(move)
-            puzzle.display()
-            if puzzle.is_solved():
-                print(f"Congratulations! You've solved the puzzle in {puzzle.move_count} moves!")
-                break
-        else:
-            print("Invalid command! Please enter a valid move or command.")
+    root = tk.Tk()
+    app = PuzzleGUI(root)
+    root.mainloop()
