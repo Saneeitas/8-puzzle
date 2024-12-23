@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox, filedialog
 import pickle
 import time
+import os
 
 class Puzzle:
     def __init__(self, initial_state):
@@ -53,6 +54,16 @@ class Puzzle:
         with open(filename, 'rb') as f:
             self.state, self.move_count = pickle.load(f)
 
+    def save_high_scores(self, scores, filename='high_scores.pkl'):
+        with open(filename, 'wb') as f:
+            pickle.dump(scores, f)
+
+    def load_high_scores(self, filename='high_scores.pkl'):
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                return pickle.load(f)
+        return []
+
 class PuzzleGUI:
     def __init__(self, master):
         self.master = master
@@ -60,6 +71,7 @@ class PuzzleGUI:
         self.puzzle = Puzzle([1, 2, 3, 4, 5, 6, 0, 7, 8])
         self.start_time = None
         self.elapsed_time = 0
+        self.high_scores = self.puzzle.load_high_scores()
         self.puzzle.randomize()
         self.create_widgets()
         self.update_display()
@@ -90,6 +102,9 @@ class PuzzleGUI:
         self.timer_label = tk.Label(self.master, text='Time: 0s')
         self.timer_label.grid(row=5, column=0, columnspan=3)
 
+        self.high_scores_button = tk.Button(self.master, text='High Scores', command=self.show_high_scores)
+        self.high_scores_button.grid(row=6, column=0, columnspan=3)
+
     def move_tile(self, i, j):
         zero_pos = np.argwhere(self.puzzle.state == 0)[0]
         x, y = zero_pos
@@ -109,6 +124,7 @@ class PuzzleGUI:
                 elapsed_time = int(time.time() - self.start_time)
                 score = self.calculate_score(elapsed_time)
                 messagebox.showinfo("Congratulations!", f"You've solved the puzzle in {self.puzzle.move_count} moves and {elapsed_time} seconds!\nYour score: {score}")
+                self.update_high_scores(score)
                 self.score_label.config(text=f'Score: {score}')
                 self.reset_timer()
 
@@ -147,6 +163,19 @@ class PuzzleGUI:
             self.update_display()
             self.start_time = time.time()  # Reset the timer
             messagebox.showinfo("Game Loaded", "Your game has been loaded successfully!")
+
+    def update_high_scores(self, score):
+        self.high_scores.append(score)
+        self.high_scores.sort(reverse=True)  # Sort scores in descending order
+        self.high_scores = self.high_scores[:5]  # Keep only the top 5 scores
+        self.puzzle.save_high_scores(self.high_scores)  # Save high scores to file
+
+    def show_high_scores(self):
+        if not self.high_scores:
+            messagebox.showinfo("High Scores", "No high scores yet!")
+        else:
+            scores = "\n".join(str(s) for s in self.high_scores)
+            messagebox.showinfo("High Scores", f"Top Scores:\n{scores}")
 
     def reset_timer(self):
         self.start_time = None
