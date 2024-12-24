@@ -20,14 +20,14 @@ class Puzzle:
         zero_pos = np.argwhere(self.state == 0)[0]
         x, y = zero_pos
 
-        if direction == 'up' and x < self.grid_size - 1:
-            self.state[x, y], self.state[x + 1, y] = self.state[x + 1, y], self.state[x, y]
-        elif direction == 'down' and x > 0:
-            self.state[x, y], self.state[x - 1, y] = self.state[x - 1, y], self.state[x, y]
-        elif direction == 'left' and y < self.grid_size - 1:
-            self.state[x, y], self.state[x, y + 1] = self.state[x, y + 1], self.state[x, y]
-        elif direction == 'right' and y > 0:
-            self.state[x, y], self.state[x, y - 1] = self.state[x, y - 1], self.state[x, y]
+        if direction == 'up' and x < self.grid_size - 1:  # Change to x < grid_size - 1
+            self.state[x, y], self.state[x + 1, y] = self.state[x + 1, y], self.state[x, y]  # Swap with the tile above
+        elif direction == 'down' and x > 0:  # Change to x > 0
+            self.state[x, y], self.state[x - 1, y] = self.state[x - 1, y], self.state[x, y]  # Swap with the tile below
+        elif direction == 'left' and y < self.grid_size - 1:  # Change to y < grid_size - 1
+            self.state[x, y], self.state[x, y + 1] = self.state[x, y + 1], self.state[x, y]  # Swap with the tile to the left
+        elif direction == 'right' and y > 0:  # Change to y > 0
+            self.state[x, y], self.state[x, y - 1] = self.state[x, y - 1], self.state[x, y]  # Swap with the tile to the right
 
         self.move_count += 1  # Increment move counter
 
